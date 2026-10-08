@@ -1,0 +1,47 @@
+---
+import type { Project } from '../data/site';
+import { useT, type Lang } from '../i18n/ui';
+
+// Code-style panel for backend-only projects: shows the project's real API routes.
+interface Props {
+  api: NonNullable<Project['api']>;
+  lang: Lang;
+  limit?: number;
+  class?: string;
+}
+
+const { api, lang, limit = api.routes.length } = Astro.props;
+const t = useT(lang);
+
+const verbColor: Record<string, string> = {
+  GET: 'text-emerald-400',
+  POST: 'text-sky-400',
+  PUT: 'text-amber-400',
+  PATCH: 'text-amber-400',
+  DELETE: 'text-rose-400',
+};
+
+const rows = api.routes.slice(0, limit).map((r) => {
+  const [verb, ...rest] = r.trim().split(/\s+/);
+  return { verb, path: rest.join(' ') };
+});
+---
+
+<div class:list={['flex size-full flex-col bg-zinc-950 font-mono text-[11px] leading-relaxed text-zinc-300 sm:text-xs', Astro.props.class]}>
+  <div class="flex items-center gap-1.5 border-b border-zinc-800 px-4 py-2.5">
+    <span class="size-2.5 rounded-full bg-zinc-700"></span>
+    <span class="size-2.5 rounded-full bg-zinc-700"></span>
+    <span class="size-2.5 rounded-full bg-zinc-700"></span>
+    <span class="ml-3 truncate text-zinc-500">{api.prefix} · {api.total} <span class="font-sans">{t('project.apiMore')}</span></span>
+  </div>
+  <ul class="flex-1 overflow-hidden px-4 py-3">
+    {
+      rows.map((row) => (
+        <li class="flex gap-3 whitespace-nowrap">
+          <span class:list={['w-12 shrink-0 font-semibold', verbColor[row.verb] ?? 'text-zinc-400']}>{row.verb}</span>
+          <span class="truncate">{api.prefix}{row.path}</span>
+        </li>
+      ))
+    }
+  </ul>
+</div>

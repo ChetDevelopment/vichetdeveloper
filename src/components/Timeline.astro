@@ -1,0 +1,32 @@
+---
+import type { TimelineItem } from '../data/site';
+import { useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  items: TimelineItem[];
+  lang: Lang;
+  class?: string;
+}
+
+const { items, lang } = Astro.props;
+const t = useT(lang);
+---
+
+<ol class:list={['space-y-8 border-l border-zinc-200 pl-6 dark:border-zinc-800', Astro.props.class]}>
+  {
+    items.map((e) => (
+      <li class="relative">
+        <span class="absolute -left-[29px] top-1.5 size-2.5 rounded-full border-2 border-white bg-zinc-300 dark:border-zinc-950 dark:bg-zinc-600" aria-hidden="true" />
+        {t(e.period) && <p class="text-sm text-zinc-500">{t(e.period)}</p>}
+        <h3 class="mt-1 font-semibold">
+          {t(e.title)} · <span class="font-normal text-zinc-600 dark:text-zinc-400">{t(e.org)}</span>
+        </h3>
+        {e.points && (
+          <ul class="mt-2 list-disc space-y-1 pl-5 text-[15px] leading-relaxed marker:text-zinc-400">
+            {e.points.map((pt) => <li>{t(pt)}</li>)}
+          </ul>
+        )}
+      </li>
+    ))
+  }
+</ol>

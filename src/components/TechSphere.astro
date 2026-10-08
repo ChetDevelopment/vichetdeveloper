@@ -1,0 +1,104 @@
+---
+/**
+ * A rotating 3D sphere of the technologies I use (no 3D library — just math + CSS transforms).
+ * Move the mouse (or drag on a phone) to turn it. It pauses when off-screen
+ * and stays still for visitors who prefer reduced motion.
+ */
+import { skills } from '../data/site';
+
+// Keep the sphere readable: skip long testing phrases and small tools.
+const skip = /testing|debugging|^(Apache|Ubuntu|Jira|Postman|GitHub|Bootstrap)$/i;
+const words = [...new Set(skills.flatMap((g) => g.items).filter((w) => !skip.test(w)))];
+
+interface Props {
+  class?: string;
+}
+---
+
+<div class:list={['tech-sphere relative mx-auto aspect-square w-full max-w-[26rem] touch-pan-y select-none', Astro.props.class]} aria-label={words.join(', ')} role="img">
+  <!-- soft glow behind the sphere -->
+  <div class="absolute inset-[12%] rounded-full bg-accent/15 blur-3xl" aria-hidden="true"></div>
+  {
+    words.map((w, i) => (
+      <span
+        class:list={[
+          'sphere-item absolute top-1/2 left-1/2 rounded-full border px-2.5 py-1 text-xs font-medium whitespace-nowrap sm:text-sm',
+          i % 3 === 0
+            ? 'border-accent/40 bg-accent/10 text-accent'
+            : 'border-zinc-200 bg-white/90 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/90 dark:text-zinc-200',
+        ]}
+        aria-hidden="true"
+      >
+        {w}
+      </span>
+    ))
+  }
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.tech-sphere').forEach((root) => {
+    const items = [...root.querySelectorAll<HTMLElement>('.sphere-item')];
+    const n = items.length;
+    // Spread points evenly on a sphere (Fibonacci sphere).
+    const points = items.map((_, i) => {
+      const y = 1 - (i / (n - 1)) * 2;
+      const r = Math.sqrt(1 - y * y);
+      const theta = Math.PI * (3 - Math.sqrt(5)) * i;
+      return { x: Math.cos(theta) * r, y, z: Math.sin(theta) * r };
+    });
+
+    let ax = 0.0018; // rotation speed around X
+    let ay = 0.0035; // rotation speed around Y
+    let rotX = 0;
+    let rotY = 0;
+    let running = false;
+    let frame = 0;
+
+    const draw = () => {
+      const radius = root.clientWidth * 0.43;
+      const cx = Math.cos(rotX), sx = Math.sin(rotX), cy = Math.cos(rotY), sy = Math.sin(rotY);
+      points.forEach((p, i) => {
+        // rotate around Y, then X
+        const x1 = p.x * cy + p.z * sy;
+        const z1 = -p.x * sy + p.z * cy;
+        const y2 = p.y * cx - z1 * sx;
+        const z2 = p.y * sx + z1 * cx;
+        const scale = 0.62 + (z2 + 1) * 0.28; // 0.62 (back) → 1.18 (front)
+        const el = items[i];
+        el.style.transform = `translate(-50%, -50%) translate3d(${x1 * radius}px, ${y2 * radius}px, 0) scale(${scale})`;
+        el.style.opacity = String(0.25 + (z2 + 1) * 0.375);
+        el.style.zIndex = String(Math.round((z2 + 1) * 100));
+      });
+    };
+
+    const loop = () => {
+      rotX += ax;
+      rotY += ay;
+      draw();
+      if (running) frame = requestAnimationFrame(loop);
+    };
+
+    draw();
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Steer with the mouse / finger.
+    const steer = (clientX: number, clientY: number) => {
+      const rect = root.getBoundingClientRect();
+      ay = ((clientX - rect.left) / rect.width - 0.5) * 0.02;
+      ax = -((clientY - rect.top) / rect.height - 0.5) * 0.02;
+    };
+    root.addEventListener('pointermove', (e) => steer(e.clientX, e.clientY));
+
+    // Only animate while visible.
+    new IntersectionObserver((entries) => {
+      const visible = entries.some((e) => e.isIntersecting);
+      if (visible && !running) {
+        running = true;
+        frame = requestAnimationFrame(loop);
+      } else if (!visible) {
+        running = false;
+        cancelAnimationFrame(frame);
+      }
+    }).observe(root);
+  });
+</script>

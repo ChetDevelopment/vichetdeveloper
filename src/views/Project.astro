@@ -1,0 +1,208 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import ApiPreview from '../components/ApiPreview.astro';
+import BrowserFrame from '../components/BrowserFrame.astro';
+import Highlights from '../components/Highlights.astro';
+import { projects, type Project } from '../data/site';
+import { projectImages } from '../lib/projectImages';
+import { localePath, useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  project: Project;
+}
+
+const { lang, project } = Astro.props;
+const t = useT(lang);
+
+const [cover, ...gallery] = projectImages(project.slug);
+const title = t(project.title);
+
+const index = projects.findIndex((p) => p.slug === project.slug);
+const next = projects[(index + 1) % projects.length];
+
+const sections = [
+  { title: t('project.built'), items: project.features },
+  { title: t('project.challenges'), items: project.challenges ?? [] },
+  { title: t('project.learned'), items: project.learned ?? [] },
+].filter((s) => s.items.length > 0);
+
+const facts = [
+  { label: t('project.role'), value: t(project.role) },
+  { label: t('project.when'), value: t(project.period) },
+].filter((f) => f.value);
+---
+
+<Base lang={lang} title={t(project.title)} description={t(project.summary)} image={cover}>
+  <article class="container-page pt-10 sm:pt-14">
+    <a href={localePath('/projects', lang)} class="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
+      <Icon name="arrowLeft" size={14} /> {t('project.all')}
+    </a>
+
+    <header class="mt-8 max-w-3xl">
+      <h1 class="text-3xl font-bold sm:text-4xl lg:text-5xl">{t(project.title)}</h1>
+      <p class="mt-5 text-lg leading-relaxed sm:text-xl">{t(project.summary)}</p>
+      {project.highlights && <Highlights items={project.highlights} lang={lang} class="mt-8 max-w-2xl" />}
+      {
+        project.private && (
+          <p class="mt-6 inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+            <Icon name="lock" size={14} class="shrink-0" /> {t('project.private')}
+          </p>
+        )
+      }
+    </header>
+
+    {
+      cover && (
+        <div class="mt-12 rounded-3xl bg-[linear-gradient(140deg,color-mix(in_oklch,var(--color-accent)_16%,transparent),transparent_70%)] p-3 sm:p-6 lg:p-10">
+          <BrowserFrame url={project.liveUrl ? new URL(project.liveUrl).host : 'localhost'} class="rounded-xl shadow-xl shadow-zinc-900/10 dark:shadow-black/40">
+            <button type="button" data-zoom={cover} class="block w-full cursor-zoom-in">
+              <img src={cover} alt={`${title} — screenshot 1`} fetchpriority="high" class="w-full" />
+            </button>
+          </BrowserFrame>
+        </div>
+      )
+    }
+    {cover && project.imageNote && <p class="mt-3 text-sm text-zinc-500">{t(project.imageNote)}</p>}
+
+    {
+      !cover && project.api && (
+        <section class="mt-10" aria-label={t('project.api')}>
+          <ApiPreview api={project.api} lang={lang} class="rounded-2xl border border-zinc-800 text-xs sm:text-sm" />
+        </section>
+      )
+    }
+
+    <div class="mt-12 grid gap-10 lg:grid-cols-12 lg:gap-14">
+      <!-- Info box: on top on phones, sticky on the right on desktop -->
+      <aside class="lg:order-last lg:col-span-4">
+        <div class="card space-y-6 p-6 lg:sticky lg:top-24">
+          <dl class="space-y-5 text-sm">
+            {
+              facts.map((f) => (
+                <div>
+                  <dt class="text-zinc-500">{f.label}</dt>
+                  <dd class="mt-1 font-medium text-zinc-900 dark:text-zinc-100">{f.value}</dd>
+                </div>
+              ))
+            }
+            <div>
+              <dt class="text-zinc-500">{t('project.tech')}</dt>
+              <dd class="mt-2">
+                <ul class="flex flex-wrap gap-1.5">
+                  {project.stack.map((s) => <li class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{s}</li>)}
+                </ul>
+              </dd>
+            </div>
+          </dl>
+          {
+            (project.liveUrl || project.code?.length) && (
+              <div class="flex flex-col gap-2">
+                {project.liveUrl && (
+                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" class="btn-primary">
+                    {project.liveLabel ? t(project.liveLabel) : t('project.live')} <Icon name="external" size={14} />
+                  </a>
+                )}
+                {project.code?.map((repo) => (
+                  <a href={repo.url} target="_blank" rel="noopener noreferrer" class="btn-ghost">
+                    <Icon name="github" size={14} /> {repo.label ? t(repo.label) : t('project.code')}
+                  </a>
+                ))}
+              </div>
+            )
+          }
+        </div>
+      </aside>
+
+      <div class="space-y-12 lg:col-span-8">
+        {
+          project.overview && (
+            <section>
+              <h2 class="text-xl font-semibold sm:text-2xl">{t('project.overview')}</h2>
+              <p class="mt-4 text-[17px] leading-relaxed">{t(project.overview)}</p>
+            </section>
+          )
+        }
+        {
+          sections.map((s) => (
+            <section>
+              <h2 class="text-xl font-semibold sm:text-2xl">{s.title}</h2>
+              <ul class="mt-4 space-y-3 text-[17px] leading-relaxed">
+                {s.items.map((item) => (
+                  <li class="flex gap-3">
+                    <span class="mt-[0.7em] size-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />
+                    <span>{t(item)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        }
+      </div>
+    </div>
+
+    {
+      gallery.length > 0 && (
+        <section class="mt-16">
+          <h2 class="text-xl font-semibold sm:text-2xl">{t('project.gallery')}</h2>
+          <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {gallery.map((src, i) => (
+              <li>
+                <button
+                  type="button"
+                  data-zoom={src}
+                  class="block aspect-[2/1] w-full cursor-zoom-in overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <img src={src} alt={`${title} — screenshot ${i + 2}`} loading="lazy" decoding="async" class="size-full object-cover object-top transition-transform duration-300 hover:scale-[1.03]" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      projects.length > 1 && (
+        <nav class="mt-20" aria-label={t('project.next')}>
+          <a
+            href={localePath(`/projects/${next.slug}`, lang)}
+            class="card group flex items-center justify-between gap-4 p-6 transition-colors hover:bg-zinc-50 sm:p-8 dark:hover:bg-zinc-900/70"
+          >
+            <span>
+              <span class="block text-sm text-zinc-500">{t('project.next')}</span>
+              <span class="mt-1 block text-lg font-semibold text-zinc-900 sm:text-xl dark:text-zinc-100">{t(next.title)}</span>
+            </span>
+            <Icon name="arrowRight" size={20} class="shrink-0 transition-transform group-hover:translate-x-1" />
+          </a>
+        </nav>
+      )
+    }
+  </article>
+</Base>
+
+<!-- Full-size image viewer -->
+<dialog id="zoom" class="m-auto max-h-[92vh] max-w-[94vw] bg-transparent p-0 backdrop:bg-black/80">
+  <form method="dialog">
+    <button class="absolute top-2 right-2 rounded-full bg-black/60 px-3 py-1 text-sm text-white" aria-label="Close">✕</button>
+  </form>
+  <img id="zoom-img" alt="" class="max-h-[92vh] max-w-[94vw] rounded-lg object-contain" />
+</dialog>
+
+<script>
+  const dialog = document.getElementById('zoom') as HTMLDialogElement | null;
+  const zoomImg = document.getElementById('zoom-img') as HTMLImageElement | null;
+  document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (!dialog || !zoomImg) return;
+      zoomImg.src = button.dataset.zoom ?? '';
+      zoomImg.alt = button.querySelector('img')?.alt ?? '';
+      dialog.showModal();
+    });
+  });
+  // Click outside the image to close.
+  dialog?.addEventListener('click', (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+</script>

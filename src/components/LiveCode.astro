@@ -1,0 +1,100 @@
+---
+/**
+ * A code editor that "types" a small TypeScript file about me.
+ * Without JavaScript (or with reduced motion) the full code is shown right away.
+ */
+import { profile } from '../data/site';
+
+type Token = [kind: 'kw' | 'var' | 'key' | 'str' | 'bool' | 'fn' | 'cm' | 'pn', text: string];
+
+const s = (text: string): Token => ['str', `'${text}'`];
+const p = (text: string): Token => ['pn', text];
+
+const lines: Token[][] = [
+  [['cm', '// developer.ts']],
+  [['kw', 'const '], ['var', 'developer'], p(' = {')],
+  [p('  '), ['key', 'name'], p(': '), s(profile.name), p(',')],
+  [p('  '), ['key', 'role'], p(': '), s(profile.role.en), p(',')],
+  [p('  '), ['key', 'location'], p(': '), s('Phnom Penh, Cambodia'), p(',')],
+  [p('  '), ['key', 'frontend'], p(': ['), s('Vue'), p(', '), s('TypeScript'), p(', '), s('Tailwind'), p('],')],
+  [p('  '), ['key', 'backend'], p(': ['), s('Laravel'), p(', '), s('Node.js'), p(', '), s('NestJS'), p('],')],
+  [p('  '), ['key', 'database'], p(': ['), s('MySQL'), p(', '), s('PostgreSQL'), p('],')],
+  [p('  '), ['key', 'openToWork'], p(': '), ['bool', String(profile.openToWork)], p(',')],
+  [p('};')],
+  [],
+  [['var', 'developer'], p('.'), ['fn', 'build'], p('('), s('something useful'), p(');')],
+];
+
+const color: Record<Token[0], string> = {
+  kw: 'text-fuchsia-400',
+  var: 'text-sky-300',
+  key: 'text-zinc-200',
+  str: 'text-emerald-300',
+  bool: 'text-amber-300',
+  fn: 'text-sky-400',
+  cm: 'text-zinc-500 italic',
+  pn: 'text-zinc-400',
+};
+
+interface Props {
+  class?: string;
+}
+---
+
+<div
+  class:list={['overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-zinc-900/20 dark:shadow-black/50', Astro.props.class]}
+  data-live-code
+>
+  <div class="flex items-center gap-1.5 border-b border-zinc-800 px-4 py-3">
+    <span class="size-3 rounded-full bg-[#ff5f57]"></span>
+    <span class="size-3 rounded-full bg-[#febc2e]"></span>
+    <span class="size-3 rounded-full bg-[#28c840]"></span>
+    <span class="ml-3 font-mono text-xs text-zinc-500">developer.ts</span>
+  </div>
+  <pre class="overflow-x-auto p-5 font-mono text-[12.5px] leading-[1.85] sm:text-sm"><code>{
+    lines.map((line, i) => (
+      <span class="block whitespace-pre"><span class="mr-5 inline-block w-5 text-right text-zinc-600 select-none">{i + 1}</span>{line.map(([kind, text]) => <span class={color[kind]} data-t={text}>{text}</span>)}</span>
+    ))
+  }<span class="caret ml-0.5 inline-block h-[1.1em] w-2 translate-y-[0.2em] bg-accent" aria-hidden="true"></span></code></pre>
+</div>
+
+<style>
+  .caret {
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  // Type the code character by character the first time it scrolls into view.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll<HTMLElement>('[data-live-code]').forEach((root) => {
+    if (reduce) return;
+    const tokens = [...root.querySelectorAll<HTMLElement>('[data-t]')];
+    const caret = root.querySelector<HTMLElement>('.caret');
+    tokens.forEach((el) => (el.textContent = ''));
+
+    const type = async () => {
+      for (const el of tokens) {
+        const text = el.dataset.t ?? '';
+        el.after(caret!);
+        for (let i = 1; i <= text.length; i++) {
+          el.textContent = text.slice(0, i);
+          await new Promise((r) => setTimeout(r, text.trim() ? 22 : 4));
+        }
+      }
+    };
+
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        io.disconnect();
+        type();
+      }
+    });
+    io.observe(root);
+  });
+</script>

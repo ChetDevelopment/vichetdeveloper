@@ -1,0 +1,30 @@
+---
+import type { Project } from '../data/site';
+import { useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  items: NonNullable<Project['highlights']>;
+  lang: Lang;
+  size?: 'sm' | 'lg';
+  class?: string;
+}
+
+const { items, lang, size = 'lg' } = Astro.props;
+const t = useT(lang);
+---
+
+<dl class:list={['grid grid-cols-3 divide-x divide-zinc-200 dark:divide-zinc-800', Astro.props.class]}>
+  {
+    items.map((h) => (
+      <div class="px-3 first:pl-0 last:pr-0 sm:px-5">
+        <dt class="sr-only">{t(h.label)}</dt>
+        <dd>
+          <span class:list={['block font-bold tracking-tight text-zinc-900 dark:text-zinc-50', size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-xl']}>
+            {h.value}
+          </span>
+          <span class="mt-1 block text-xs leading-snug text-zinc-500 sm:text-sm">{t(h.label)}</span>
+        </dd>
+      </div>
+    ))
+  }
+</dl>

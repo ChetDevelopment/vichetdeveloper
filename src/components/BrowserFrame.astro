@@ -1,0 +1,27 @@
+---
+// A simple browser window around a screenshot, so it reads as a real product.
+interface Props {
+  url?: string;
+  class?: string;
+}
+
+const { url, class: className } = Astro.props;
+---
+
+<div class:list={['flex flex-col overflow-hidden border border-zinc-200 bg-white shadow-sm dark:border-zinc-700/70 dark:bg-zinc-900', className]}>
+  <div class="flex shrink-0 items-center gap-1.5 border-b border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+    <span class="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
+    <span class="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
+    <span class="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
+    {
+      url && (
+        <span class="mx-auto max-w-[70%] truncate rounded-md bg-white px-3 py-0.5 text-[11px] text-zinc-500 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:ring-zinc-700">
+          {url}
+        </span>
+      )
+    }
+  </div>
+  <div class="relative min-h-0 flex-1">
+    <slot />
+  </div>
+</div>

@@ -1,0 +1,96 @@
+---
+import Icon from './Icon.astro';
+import ApiPreview from './ApiPreview.astro';
+import BrowserFrame from './BrowserFrame.astro';
+import Highlights from './Highlights.astro';
+import type { Project } from '../data/site';
+import { projectImages } from '../lib/projectImages';
+import { localePath, useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  project: Project;
+  lang: Lang;
+  // Featured: wide layout with the screenshot beside the text (desktop).
+  featured?: boolean;
+}
+
+const { project, lang, featured = false } = Astro.props;
+const t = useT(lang);
+const meta = [t(project.role), t(project.period)].filter(Boolean).join(' · ');
+const cover = projectImages(project.slug)[0];
+const host = project.liveUrl ? new URL(project.liveUrl).host : 'localhost';
+const href = localePath(`/projects/${project.slug}`, lang);
+const tagLimit = featured ? 6 : 4;
+---
+
+<article
+  class:list={[
+    'card group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-lg hover:shadow-zinc-900/5 motion-reduce:transform-none dark:hover:border-zinc-700 dark:hover:shadow-black/30',
+    featured && 'md:grid md:grid-cols-12',
+  ]}
+>
+  <!-- Screenshot area: a browser window peeking up from the bottom of a tinted panel -->
+  <div
+    class:list={[
+      'relative overflow-hidden bg-[linear-gradient(140deg,color-mix(in_oklch,var(--color-accent)_16%,transparent),transparent_70%)] px-5 pt-5 sm:px-7 sm:pt-7',
+      featured ? 'aspect-[16/10] md:col-span-7 md:aspect-auto md:min-h-[22rem]' : 'aspect-[16/10]',
+    ]}
+  >
+    {
+      project.api && !cover ? (
+        <ApiPreview api={project.api} lang={lang} limit={featured ? 12 : 8} class="h-full rounded-t-xl border border-b-0 border-zinc-800 shadow-sm" />
+      ) : (
+        <BrowserFrame url={host} class="h-full rounded-t-xl border-b-0 transition-transform duration-500 group-hover:-translate-y-1 motion-reduce:transform-none">
+          {cover ? (
+            <img src={cover} alt={`${t(project.title)} — screenshot`} loading="lazy" decoding="async" class="absolute inset-0 size-full object-cover object-top" />
+          ) : (
+            <div class="grid h-full place-items-center p-6 text-center text-lg font-semibold text-zinc-300 dark:text-zinc-700">{t(project.title)}</div>
+          )}
+        </BrowserFrame>
+      )
+    }
+    <div class="absolute top-3 right-3 flex gap-1.5">
+      {
+        project.liveUrl && (
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-zinc-900/85 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+            <span class="size-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+            {t('project.liveBadge')}
+          </span>
+        )
+      }
+      {
+        project.private && (
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-zinc-900/85 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+            <Icon name="lock" size={11} />
+            {t('project.privateShort')}
+          </span>
+        )
+      }
+    </div>
+  </div>
+
+  <div
+    class:list={[
+      'flex flex-1 flex-col border-t border-zinc-100 p-6 sm:p-7 dark:border-zinc-800',
+      featured && 'md:col-span-5 md:justify-center md:border-t-0 md:border-l md:p-10',
+    ]}
+  >
+    <p class="text-sm text-zinc-500">{meta}</p>
+    <h3 class:list={['mt-1 font-semibold', featured ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl']}>
+      <a href={href} class="after:absolute after:inset-0">
+        {t(project.title)}
+      </a>
+    </h3>
+    <p class:list={['mt-2 text-[15px] leading-relaxed', !featured && 'flex-1']}>{t(project.summary)}</p>
+    {featured && project.highlights && <Highlights items={project.highlights} lang={lang} size="sm" class="mt-6 border-y border-zinc-100 py-4 dark:border-zinc-800" />}
+    <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+      <ul class="flex flex-wrap gap-1.5" aria-label={t('a11y.tech')}>
+        {project.stack.slice(0, tagLimit).map((s) => <li class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">{s}</li>)}
+        {project.stack.length > tagLimit && <li class="px-1 py-0.5 text-xs text-zinc-500">+{project.stack.length - tagLimit}</li>}
+      </ul>
+      <span class="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+        {t('projects.readMore')} <Icon name="arrowRight" size={14} class="transition-transform group-hover:translate-x-0.5" />
+      </span>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,71 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Portrait from '../components/Portrait.astro';
+import SkillList from '../components/SkillList.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import { about, profile } from '../data/site';
+import { localePath, useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+
+const pill = 'rounded-full border border-zinc-200 px-3 py-1 text-sm dark:border-zinc-800';
+---
+
+<Base lang={lang} title={t('nav.about')} description={t(about.paragraphs[0])} image={profile.photo || undefined}>
+  <section class="container-page pt-12 sm:pt-16">
+    <div class="grid gap-10 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-4">
+        <div class="lg:sticky lg:top-24">
+          <Portrait lang={lang} class="w-48 sm:w-56 lg:w-full" />
+          <p class="mt-8 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{profile.name}</p>
+          <p class="text-zinc-500">{t(profile.role)}</p>
+          <p class="mt-2 inline-flex items-center gap-1.5 text-sm text-zinc-500">
+            <Icon name="mapPin" size={14} />
+            {t(profile.location)}
+          </p>
+          <SocialLinks class="mt-4 -ml-2" />
+        </div>
+      </div>
+
+      <div class="lg:col-span-8">
+        <p class="eyebrow">{t('nav.about')}</p>
+        <h1 class="mt-2 text-3xl font-bold sm:text-4xl">{t('about.title')}</h1>
+
+        <div class="mt-8 space-y-5 text-lg leading-relaxed">
+          {about.paragraphs.map((p) => <p>{t(p)}</p>)}
+        </div>
+
+        <div class="mt-12 grid gap-10 sm:grid-cols-2">
+          <section>
+            <h2 class="text-xl font-semibold">{t('about.softSkills')}</h2>
+            <ul class="mt-4 flex flex-wrap gap-2">
+              {about.softSkills.map((s) => <li class={pill}>{t(s)}</li>)}
+            </ul>
+          </section>
+          <section>
+            <h2 class="text-xl font-semibold">{t('about.languages')}</h2>
+            <ul class="mt-4 flex flex-wrap gap-2">
+              {about.spokenLanguages.map((s) => <li class={pill}>{t(s)}</li>)}
+            </ul>
+          </section>
+        </div>
+
+        <div class="mt-12 flex flex-col gap-3 sm:flex-row">
+          <a href={localePath('/contact', lang)} class="btn-primary">{t('home.getInTouch')} <Icon name="arrowRight" size={14} /></a>
+          {profile.cvUrl && <a href={profile.cvUrl} download class="btn-ghost"><Icon name="download" size={14} /> {t('about.downloadCv')}</a>}
+        </div>
+      </div>
+    </div>
+
+    <section class="mt-20">
+      <h2 class="section-title">{t('home.skills')}</h2>
+      <SkillList lang={lang} class="mt-8" />
+    </section>
+  </section>
+</Base>

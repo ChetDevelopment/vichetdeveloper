@@ -1,0 +1,125 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import SkillList from '../components/SkillList.astro';
+import Timeline from '../components/Timeline.astro';
+import Portrait from '../components/Portrait.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+import LiveCode from '../components/LiveCode.astro';
+import TechSphere from '../components/TechSphere.astro';
+import { education, experience, profile, projects } from '../data/site';
+import { localePath, useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+const end = lang === 'km' ? '។' : '.';
+const [first, ...rest] = projects;
+const liveCount = projects.filter((p) => p.liveUrl).length;
+
+const facts = [
+  { icon: 'external' as const, text: `${liveCount} ${t('home.factLive')}` },
+  { icon: 'graduation' as const, text: t('home.factStudy') },
+  { icon: 'mapPin' as const, text: t(profile.location) },
+];
+---
+
+<Base lang={lang}>
+  <!-- Hero: fills the first screen -->
+  <section class="relative overflow-hidden">
+    <!-- Subtle grid pattern that fades out -->
+    <div
+      class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--grid-line)_1px,transparent_1px),linear-gradient(to_bottom,var(--grid-line)_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_70%_60%_at_60%_30%,black,transparent)]"
+      aria-hidden="true"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(50rem_28rem_at_85%_0%,color-mix(in_oklch,var(--color-accent)_16%,transparent),transparent)]"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div class="container-page grid min-h-[calc(100svh-4rem)] items-center gap-12 py-12 lg:grid-cols-12 lg:py-16">
+      <div class="lg:col-span-7" data-reveal>
+        <p class="eyebrow">{t(profile.role)}</p>
+        <h1 class="mt-4 text-4xl font-bold sm:text-5xl lg:text-6xl xl:text-7xl">
+          {t('home.hi')} {profile.name.split(' ')[0]}{end}
+        </h1>
+        <p class="mt-6 max-w-xl text-lg leading-relaxed sm:text-xl">{t(profile.intro)}</p>
+
+        <div class="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <a href={localePath('/projects', lang)} class="btn-primary">{t('home.seeProjects')} <Icon name="arrowRight" size={14} /></a>
+          {profile.cvUrl && <a href={profile.cvUrl} download class="btn-ghost"><Icon name="download" size={14} /> {t('home.cv')}</a>}
+          <SocialLinks class="justify-center sm:ml-2" />
+        </div>
+
+        <ul class="mt-10 flex flex-wrap gap-x-6 gap-y-3 border-t border-zinc-200 pt-6 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+          {
+            facts.map((f) => (
+              <li class="inline-flex items-center gap-2">
+                <Icon name={f.icon} size={14} class="text-accent" />
+                {f.text}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="order-first lg:order-last lg:col-span-5" data-reveal>
+        <Portrait lang={lang} class="mx-auto w-56 sm:w-72 lg:w-full lg:max-w-sm" badge={profile.openToWork ? t('home.openShort') : undefined} />
+      </div>
+    </div>
+  </section>
+
+  <!-- 01 Projects -->
+  <section class="container-page py-20 sm:py-28" aria-labelledby="projects-heading">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <SectionHeader number="01" eyebrow={t('nav.projects')} title={t('home.projectsTitle')} intro={t('home.projectsIntro')} id="projects-heading" />
+      <a href={localePath('/projects', lang)} class="link text-sm" data-reveal>{t('home.viewAll')}</a>
+    </div>
+    <div class="mt-12 grid gap-6 md:grid-cols-2">
+      {first && <div class="min-w-0 md:col-span-2" data-reveal><ProjectCard project={first} lang={lang} featured /></div>}
+      {
+        rest.map((p, i) => {
+          // An odd last card would sit alone, so make it wide too.
+          const wide = rest.length % 2 === 1 && i === rest.length - 1;
+          return <div class:list={['min-w-0', wide && 'md:col-span-2']} data-reveal><ProjectCard project={p} lang={lang} featured={wide} /></div>;
+        })
+      }
+    </div>
+  </section>
+
+  <!-- 02 Skills -->
+  <section class="border-y border-zinc-100 bg-zinc-50/60 py-20 sm:py-28 dark:border-zinc-900 dark:bg-zinc-900/30" aria-labelledby="skills-heading">
+    <div class="container-page">
+      <SectionHeader number="02" eyebrow={t('home.skills')} title={t('home.skillsTitle')} intro={t('home.skillsIntro')} id="skills-heading" />
+      <div class="mt-12 grid items-center gap-10 lg:grid-cols-12">
+        <div class="min-w-0 lg:col-span-7" data-reveal><LiveCode /></div>
+        <div class="lg:col-span-5" data-reveal><TechSphere /></div>
+      </div>
+      <div data-reveal><SkillList lang={lang} class="mt-14" /></div>
+    </div>
+  </section>
+
+  <!-- 03 Experience & education -->
+  <section class="container-page py-20 sm:py-28" aria-labelledby="exp-heading">
+    <SectionHeader number="03" eyebrow={t('home.experience')} title={t('home.experienceTitle')} id="exp-heading" />
+    <div class="mt-12 grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-7" data-reveal>
+        <Timeline items={experience} lang={lang} />
+      </div>
+      <div class="lg:col-span-5" data-reveal>
+        <h3 class="text-lg font-semibold">{t('home.education')}</h3>
+        <Timeline items={education} lang={lang} class="mt-6" />
+      </div>
+    </div>
+  </section>
+
+  <ContactCTA lang={lang} />
+</Base>

@@ -1,0 +1,26 @@
+---
+import { skills } from '../data/site';
+import { useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  class?: string;
+}
+
+const t = useT(Astro.props.lang);
+---
+
+<dl class:list={['grid gap-4 sm:grid-cols-2 lg:grid-cols-3', Astro.props.class]}>
+  {
+    skills.map((g) => (
+      <div class="card p-5">
+        <dt class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t(g.title)}</dt>
+        <dd class="mt-3">
+          <ul class="flex flex-wrap gap-1.5">
+            {g.items.map((s) => <li class="rounded-md bg-zinc-100 px-2 py-0.5 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{s}</li>)}
+          </ul>
+        </dd>
+      </div>
+    ))
+  }
+</dl>

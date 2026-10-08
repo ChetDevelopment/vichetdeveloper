@@ -1,0 +1,37 @@
+---
+import Icon, { type IconName } from './Icon.astro';
+import { profile } from '../data/site';
+
+interface Props {
+  class?: string;
+}
+
+type Link = { label: string; href: string; icon: IconName };
+const all: Link[] = [
+  { label: 'Email', href: profile.email ? `mailto:${profile.email}` : '', icon: 'mail' },
+  { label: 'GitHub', href: profile.github, icon: 'github' },
+  { label: 'LinkedIn', href: profile.linkedin, icon: 'linkedin' },
+  { label: 'Facebook', href: profile.facebook, icon: 'facebook' },
+  { label: 'Telegram', href: profile.telegram, icon: 'send' },
+];
+const links = all.filter((l) => l.href);
+---
+
+<ul class:list={['flex items-center gap-1', Astro.props.class]}>
+  {
+    links.map((l) => (
+      <li>
+        <a
+          href={l.href}
+          aria-label={l.label}
+          title={l.label}
+          target={l.href.startsWith('http') ? '_blank' : undefined}
+          rel={l.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+          class="inline-flex rounded-md p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+        >
+          <Icon name={l.icon} size={18} />
+        </a>
+      </li>
+    ))
+  }
+</ul>

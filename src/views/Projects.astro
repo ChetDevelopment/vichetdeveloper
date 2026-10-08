@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/Base.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { projects } from '../data/site';
+import { useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+---
+
+<Base lang={lang} title={t('nav.projects')} description={t('projects.intro')}>
+  <section class="container-page pt-14 sm:pt-20">
+    <p class="eyebrow">{t('nav.projects')}</p>
+    <h1 class="mt-2 text-3xl font-bold sm:text-4xl">{t('projects.title')}</h1>
+    <p class="mt-4 max-w-xl text-lg leading-relaxed">{t('projects.intro')}</p>
+    <div class="mt-12 grid gap-6 md:grid-cols-2">
+      {
+        projects.map((p, i) => {
+          // First card is wide; an odd last card would sit alone, so make it wide too.
+          const wide = i === 0 || (projects.length % 2 === 0 && i === projects.length - 1);
+          return <div class:list={['min-w-0', wide && 'md:col-span-2']}><ProjectCard project={p} lang={lang} featured={wide} /></div>;
+        })
+      }
+    </div>
+  </section>
+</Base>

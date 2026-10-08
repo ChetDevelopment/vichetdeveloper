@@ -1,0 +1,212 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon, { type IconName } from '../components/Icon.astro';
+import { profile } from '../data/site';
+import { useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useT(lang);
+
+/*
+ * How messages are delivered (set in .env — see README):
+ *  - PUBLIC_WEB3FORMS_KEY: free key from web3forms.com → messages go straight to your inbox
+ *  - PUBLIC_CONTACT_ENDPOINT: a Formspree form URL → same, via Formspree
+ *  - neither: the form opens the visitor's email app with the message already written
+ */
+const web3formsKey = import.meta.env.PUBLIC_WEB3FORMS_KEY;
+const endpoint = web3formsKey ? 'https://api.web3forms.com/submit' : (import.meta.env.PUBLIC_CONTACT_ENDPOINT ?? '');
+
+type Channel = { label: string; value: string; href: string; icon: IconName };
+const all: Channel[] = [
+  { label: t('contact.email'), value: profile.email, href: `mailto:${profile.email}`, icon: 'mail' },
+  { label: t('contact.phone'), value: profile.phone, href: `tel:${profile.phone.replace(/\s/g, '')}`, icon: 'phone' },
+  { label: 'LinkedIn', value: profile.linkedin.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''), href: profile.linkedin, icon: 'linkedin' },
+  { label: 'GitHub', value: profile.github.replace(/^https?:\/\//, ''), href: profile.github, icon: 'github' },
+  { label: 'Facebook', value: profile.facebook.replace(/^https?:\/\/(www\.)?/, ''), href: profile.facebook, icon: 'facebook' },
+  { label: 'Telegram', value: profile.telegram.replace(/^https?:\/\//, ''), href: profile.telegram, icon: 'send' },
+];
+const channels = all.filter((c) => c.value);
+
+const topics = [t('contact.topicJob'), t('contact.topicFreelance'), t('contact.topicCollab'), t('contact.topicOther')];
+
+const inputClass =
+  'mt-1.5 block w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2.5 text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100';
+const labelClass = 'block text-sm font-medium text-zinc-900 dark:text-zinc-100';
+---
+
+<Base lang={lang} title={t('nav.contact')} description={t('contact.intro')}>
+  <section class="container-page grid gap-12 pt-12 sm:pt-16 lg:grid-cols-12 lg:gap-16">
+    <div class="lg:col-span-5">
+      <p class="eyebrow">{t('nav.contact')}</p>
+      <h1 class="mt-2 text-3xl font-bold sm:text-4xl lg:text-5xl">{t('contact.title')}</h1>
+      <p class="mt-5 text-lg leading-relaxed">{t('contact.intro')}</p>
+
+      {
+        profile.openToWork && (
+          <p class="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <span class="size-2 rounded-full bg-emerald-500" aria-hidden="true" />
+            {t(profile.openToWorkText)}
+          </p>
+        )
+      }
+
+      <ul class="mt-10 space-y-3">
+        {
+          channels.map((c) => (
+            <li>
+              <a
+                href={c.href}
+                target={c.href.startsWith('http') ? '_blank' : undefined}
+                rel={c.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                class="group flex items-center gap-4 rounded-xl p-2 -ml-2 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              >
+                <span class="grid size-11 shrink-0 place-items-center rounded-xl border border-zinc-200 bg-white text-zinc-600 transition-colors group-hover:border-accent/40 group-hover:text-accent dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+                  <Icon name={c.icon} size={18} />
+                </span>
+                <span class="min-w-0">
+                  <span class="block text-xs text-zinc-500">{c.label}</span>
+                  <span class="block truncate font-medium text-zinc-900 dark:text-zinc-100">{c.value}</span>
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-8 inline-flex items-center gap-1.5 text-sm text-zinc-500">
+        <Icon name="mapPin" size={14} />
+        {t(profile.location)} · UTC+7
+      </p>
+    </div>
+
+    <div class="lg:col-span-7">
+      <form
+        id="contact-form"
+        action={endpoint || `mailto:${profile.email}`}
+        method="POST"
+        class="card space-y-5 p-6 shadow-sm sm:p-8"
+        data-endpoint={endpoint}
+        data-api="/api/contact"
+        data-to={profile.email}
+        data-sending={t('contact.sending')}
+        data-sent={t('contact.sent')}
+        data-failed={t('contact.failed')}
+        data-opened={t('contact.mailOpened')}
+      >
+        <div>
+          <h2 class="text-xl font-semibold">{t('contact.formTitle')}</h2>
+          <p class="mt-1 text-sm text-zinc-500">{t('contact.formHint')}</p>
+        </div>
+
+        <fieldset>
+          <legend class={labelClass}>{t('contact.topic')}</legend>
+          <div class="mt-2 flex flex-wrap gap-2">
+            {
+              topics.map((topic, i) => (
+                <label class="cursor-pointer">
+                  <input type="radio" name="topic" value={topic} checked={i === 0} class="peer sr-only" />
+                  <span class="inline-block rounded-full border border-zinc-200 px-3.5 py-1.5 text-sm text-zinc-600 transition-colors peer-checked:border-zinc-900 peer-checked:bg-zinc-900 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-accent dark:border-zinc-700 dark:text-zinc-300 dark:peer-checked:border-zinc-100 dark:peer-checked:bg-zinc-100 dark:peer-checked:text-zinc-900">
+                    {topic}
+                  </span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <label class={labelClass}>
+            {t('contact.name')}
+            <input name="name" required autocomplete="name" class={inputClass} />
+          </label>
+          <label class={labelClass}>
+            {t('contact.email')}
+            <input name="email" type="email" required autocomplete="email" class={inputClass} />
+          </label>
+        </div>
+        <label class={labelClass}>
+          {t('contact.message')}
+          <textarea name="message" required rows="6" class={inputClass}></textarea>
+        </label>
+
+        {web3formsKey && <input type="hidden" name="access_key" value={web3formsKey} />}
+        <input type="hidden" name="lang" value={lang} />
+        <input type="hidden" name="subject" value="New message from your portfolio website" />
+        <input type="hidden" name="from_name" value="Vichet Sat — Portfolio" />
+        {/* Spam traps — bots fill them in, people never see them. */}
+        <input type="checkbox" name="botcheck" tabindex="-1" class="hidden" aria-hidden="true" />
+        <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <button type="submit" class="btn-primary disabled:opacity-60">
+            <Icon name="send" size={14} />
+            {t('contact.send')}
+          </button>
+          <p id="form-status" class="text-sm" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+</Base>
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  const status = document.getElementById('form-status');
+
+  const show = (text: string | undefined, tone: 'muted' | 'ok' | 'error') => {
+    if (!status) return;
+    status.textContent = text ?? '';
+    status.className = {
+      muted: 'text-sm text-zinc-500',
+      ok: 'text-sm text-emerald-600 dark:text-emerald-400',
+      error: 'text-sm text-red-600 dark:text-red-400',
+    }[tone];
+  };
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    if (data.get('botcheck') || data.get('_gotcha')) return;
+
+    const button = form.querySelector('button');
+    if (button) button.disabled = true;
+    show(form.dataset.sending, 'muted');
+
+    // Try each way of delivering the message until one works:
+    // 1) our own /api/contact (designed email via Resend), 2) Web3Forms, 3) the visitor's email app.
+    const post = async (url: string) => {
+      try {
+        const res = await fetch(url, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    };
+
+    try {
+      if (await post(form.dataset.api!)) return done();
+      if (form.dataset.endpoint && (await post(form.dataset.endpoint))) return done();
+
+      if (!form.dataset.endpoint) {
+        const subject = `[Portfolio] ${data.get('topic')} — ${data.get('name')}`;
+        const body = `${data.get('message')}
+
+— ${data.get('name')} (${data.get('email')})`;
+        location.href = `mailto:${form.dataset.to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        show(form.dataset.opened, 'muted');
+        return;
+      }
+      show(form.dataset.failed, 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
+
+    function done() {
+      form!.reset();
+      show(form!.dataset.sent, 'ok');
+    }
+  });
+</script>

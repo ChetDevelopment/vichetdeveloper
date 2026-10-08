@@ -1,0 +1,148 @@
+---
+import { profile } from '../data/site';
+import { useT, type Lang } from '../i18n/ui';
+
+interface Props {
+  class?: string;
+  badge?: string; // small "open to work" tag over the photo
+  lang?: Lang;
+}
+
+const { badge, lang = 'en' } = Astro.props;
+const t = useT(lang);
+const initials = profile.name.split(' ').map((p) => p[0]).join('');
+---
+
+<div class:list={['relative aspect-square', Astro.props.class]}>
+  <!-- Soft offset shape behind the photo -->
+  <div class="absolute inset-0 translate-x-3 translate-y-3 rounded-[2rem] bg-accent/15 sm:translate-x-4 sm:translate-y-4" aria-hidden="true"></div>
+  {
+    profile.photo ? (
+      <div class="portrait relative size-full overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-sm dark:border-zinc-800" data-reveal-photo={profile.photoReveal ? '' : undefined}>
+        <img src={profile.photo} alt={profile.name} width="1254" height="1254" fetchpriority="high" class="size-full object-cover" />
+        {profile.photoReveal && (
+          <>
+            {/* Second version of the photo, shown only inside a circle that follows the cursor */}
+            <img src={profile.photoReveal} alt="" aria-hidden="true" loading="lazy" decoding="async" class="reveal-img pointer-events-none absolute inset-0 size-full object-cover" />
+            <span class="reveal-ring pointer-events-none absolute top-0 left-0 rounded-full border border-white/70 shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_8px_30px_rgb(0_0_0/0.25)]" aria-hidden="true" />
+            <span class="reveal-hint pointer-events-none absolute top-3 right-3 hidden items-center gap-1 rounded-full bg-zinc-900/75 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur [@media(hover:hover)]:inline-flex">
+              ✨ {t('home.photoHint')}
+            </span>
+          </>
+        )}
+      </div>
+    ) : (
+      <div
+        class="relative grid size-full place-items-center rounded-[2rem] border border-zinc-200 bg-zinc-100 text-5xl font-semibold text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+        aria-hidden="true"
+      >
+        {initials}
+      </div>
+    )
+  }
+  {
+    badge && (
+      <p class="absolute -bottom-4 left-1/2 inline-flex max-w-[92%] -translate-x-1/2 items-center gap-2 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-medium whitespace-nowrap text-zinc-700 shadow-md sm:text-[13px] lg:left-6 lg:translate-x-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+        <span class="relative flex size-2 shrink-0">
+          <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:hidden" />
+          <span class="relative inline-flex size-2 rounded-full bg-emerald-500" />
+        </span>
+        <span class="truncate">{badge}</span>
+      </p>
+    )
+  }
+</div>
+
+<style>
+  /* Lets the circle size animate smoothly. */
+  @property --r {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  .portrait {
+    --x: 50%;
+    --y: 40%;
+    --r: 0px;
+    transition: --r 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .portrait.is-revealing {
+    --r: var(--r-open, 80px);
+  }
+
+  .reveal-img {
+    /* Line the faces up: the robot image is portrait (3:4), so show its upper part. */
+    object-position: 50% 10%;
+    -webkit-mask-image: radial-gradient(circle at var(--x) var(--y), #000 calc(var(--r) - 10px), transparent var(--r));
+    mask-image: radial-gradient(circle at var(--x) var(--y), #000 calc(var(--r) - 10px), transparent var(--r));
+  }
+
+  .reveal-ring {
+    width: calc(var(--r) * 2);
+    height: calc(var(--r) * 2);
+    transform: translate(calc(var(--x) - var(--r)), calc(var(--y) - var(--r)));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .portrait.is-revealing .reveal-ring {
+    opacity: 1;
+  }
+
+  .reveal-hint {
+    transition: opacity 0.4s;
+  }
+  .portrait.was-hovered .reveal-hint {
+    opacity: 0;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-reveal-photo]').forEach((el) => {
+    let targetX = 0, targetY = 0, x = 0, y = 0, frame = 0;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Ease the lens toward the cursor so it "follows" a little behind it.
+    const tick = () => {
+      x += (targetX - x) * (reduce ? 1 : 0.18);
+      y += (targetY - y) * (reduce ? 1 : 0.18);
+      el.style.setProperty('--x', `${x}px`);
+      el.style.setProperty('--y', `${y}px`);
+      if (Math.abs(targetX - x) > 0.3 || Math.abs(targetY - y) > 0.3) frame = requestAnimationFrame(tick);
+      else frame = 0;
+    };
+
+    const moveTo = (e: PointerEvent, jump = false) => {
+      const rect = el.getBoundingClientRect();
+      targetX = e.clientX - rect.left;
+      targetY = e.clientY - rect.top;
+      if (jump) {
+        x = targetX;
+        y = targetY;
+      }
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+
+    // Lens size: about a fifth of the photo, between 56px and 96px.
+    const setSize = () => el.style.setProperty('--r-open', `${Math.min(96, Math.max(56, el.clientWidth * 0.22))}px`);
+
+    el.addEventListener('pointerenter', (e) => {
+      setSize();
+      moveTo(e, true);
+      el.classList.add('is-revealing', 'was-hovered');
+    });
+    el.addEventListener('pointermove', (e) => moveTo(e));
+    el.addEventListener('pointerleave', () => el.classList.remove('is-revealing'));
+
+    // Phones: touch to peek, release to hide.
+    el.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse') return;
+      setSize();
+      moveTo(e, true);
+      el.classList.add('is-revealing');
+    });
+    el.addEventListener('pointerup', (e) => {
+      if (e.pointerType !== 'mouse') setTimeout(() => el.classList.remove('is-revealing'), 600);
+    });
+  });
+</script>
