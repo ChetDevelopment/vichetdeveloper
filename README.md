@@ -1,6 +1,6 @@
 # Vichet Sat — Portfolio
 
-🌐 **Live:** https://vichetdeveloper.vercel.app
+🌐 **Live:** https://chetdeveloper.me
 
 Personal portfolio site built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com).
 It's a fully static site: no server or database, fast to load, and free to host.

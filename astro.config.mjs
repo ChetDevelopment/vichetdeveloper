@@ -9,7 +9,7 @@ import vercel from '@astrojs/vercel';
 // 3) otherwise a placeholder for local builds.
 const SITE_URL =
   process.env.SITE_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://vichetdeveloper.vercel.app');
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://chetdeveloper.me');
 
 export default defineConfig({
   site: SITE_URL,
