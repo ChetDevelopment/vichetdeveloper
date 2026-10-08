@@ -1,0 +1,6 @@
+_draft
+.env
+.env.local
+dist
+.astro
+node_modules
